@@ -143,9 +143,9 @@ void ofApp::draw(){
 			ofTranslate(d / 10.0, 0);
 
 			if (a < 32) {
-				ofSetColor(255, 0, 0);
+				ofSetColor(210, 0, 0);
 			} else {
-				ofSetColor(255);
+				ofSetColor(210);
 			}
 
 			ofDrawCircle(0, 0, 0.5);
