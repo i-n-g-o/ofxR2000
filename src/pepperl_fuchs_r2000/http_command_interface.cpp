@@ -30,9 +30,6 @@
 #include "Poco/Net/DatagramSocket.h"
 #include "Poco/URI.h"
 
-#include "Poco/JSON/Query.h"
-#include "Poco/JSON/JSONException.h"
-
 
 namespace pepperl_fuchs {
 	
@@ -149,18 +146,14 @@ namespace pepperl_fuchs {
         http_status_code_ = httpGet(request_str, header, content);
 		
         // Try to parse JSON response
-        try
+		// create parser
+		
+		// parse json
+		std::stringstream ss(content);
+		
+        if (!jsonParser.parse(ss, root))
         {
-            // reset parser
-            jsonParser.reset();
-            
-            // parse json
-            std::stringstream ss(content);
-            jsonResult = jsonParser.parse(ss);
-        }
-        catch (Poco::JSON::JSONException& e)
-        {
-            std::cerr << "ERROR: Exception: " <<  e.what() << " (" << e.message() << ")" << std::endl;
+			std::cerr << "Json::parse" << "Unable to parse string: " << jsonParser.getFormattedErrorMessages() << std::endl;
             return false;
         }
         
@@ -197,15 +190,16 @@ namespace pepperl_fuchs {
             return Poco::Optional<std::string>();
         
         // query json for value
-        Poco::JSON::Query query(jsonResult);
-        Poco::Dynamic::Var value = query.find(name);
-        
-        if (value.isEmpty())
-            return Poco::Optional<std::string>();
-        
-        std::string s = Poco::Dynamic::Var::toString(value);
-        
-        return Poco::Optional<std::string>(s);
+		
+		if (!root.isMember(name)) {
+			return Poco::Optional<std::string>();
+		}
+		
+		Json::Value value = root.get(name, "");
+		if (!value.isString())
+			return Poco::Optional<std::string>();
+		
+        return Poco::Optional<std::string>(value.asString());
     }
     
     
@@ -228,19 +222,40 @@ namespace pepperl_fuchs {
         if( !sendHttpCommand("get_parameter","list",namelist) || ! checkErrorCode()  )
             return key_values;
         
-        
-        Poco::JSON::Query query(jsonResult);
+		
         
        
         // Extract values from JSON property_tree
         for( std::vector<std::string>::const_iterator s = names.begin(); s != names.end(); s++ )
         {
-            Poco::Dynamic::Var value = query.find(*s);
-            
-            if( !value.isEmpty() )
-                key_values[*s] = Poco::Dynamic::Var::toString(value);
-            else
+			if( root.isMember(*s) ) {
+				
+				Json::Value v = root[*s];
+				try {
+					
+					if (v.isArray()) {
+						
+						std::string arrayString;
+						for (int i=0; i<v.size()-1; i++) {
+							arrayString += v[i].asString() + ", ";
+						}
+						arrayString += v[v.size()-1].asString();
+						
+						key_values[*s] = arrayString;
+						
+					} else if (v.isObject()) {
+						key_values[*s] = "OBJECT";
+					} else {
+						key_values[*s] = v.asString();
+					}
+					
+					
+				} catch (Exception e) {
+					std::cerr << "error: " << e.displayText() << std::endl;
+				}
+			} else {
                 key_values[*s] = "--COULD NOT RETRIEVE VALUE--";
+			}
         }
         
         return key_values;
@@ -250,16 +265,18 @@ namespace pepperl_fuchs {
     //-----------------------------------------------------------------------------
     bool HttpCommandInterface::checkErrorCode()
     {
-        Poco::JSON::Query query(jsonResult);
-        Poco::Dynamic::Var error_value = query.find("error_code");
-        Poco::Dynamic::Var error_string = query.find("error_text");
-        
-        if( !error_value.isNumeric() || (error_value.extract<int>()) != 0 || !error_string.isString() || (error_string.extract<std::string>()) != "success" )
-        {
-            if( error_string.isString() )
-                std::cerr << "ERROR: scanner replied: " << error_string.extract<std::string>() << std::endl;
-            return false;
-        }
+		Json::Value error_value = root["error_code"];
+		Json::Value error_string = root["error_text"];
+		
+		if (!root.isMember("error_code") || !root["error_code"].isNumeric() || root["error_code"].asInt() != 0 || !root["error_text"].isString() || root["error_text"].asString() != "success") {
+			
+			if (root["error_text"].isString()) {
+				std::cerr << "ERROR: scanner replied: " << root["error_text"].asString() << std::endl;
+			}
+			
+			return false;
+		}
+
         return true;
     }
     
@@ -272,29 +289,32 @@ namespace pepperl_fuchs {
             return Poco::Optional<ProtocolInfo>();
         
         // Read and set protocol info
-        Poco::JSON::Query query(jsonResult);
-		
-        Poco::Dynamic::Var protocol_name = query.find("protocol_name");
-        Poco::Dynamic::Var version_major = query.find("version_major");
-        Poco::Dynamic::Var version_minor = query.find("version_minor");
-        Poco::Dynamic::Var ocommands = query.find("commands");
-        
-        if( !protocol_name.isString() || !version_major.isInteger() || !version_minor.isInteger() || ocommands.isEmpty() )
-            return Poco::Optional<ProtocolInfo>();
+		Json::Value protocol_name = root["protocol_name"];
+		Json::Value version_major = root["version_major"];
+		Json::Value version_minor = root["version_minor"];
+		Json::Value ocommands = root["commands"];
 
+		if (!protocol_name.isString() || !version_major.isNumeric() || !version_minor.isNumeric() || ocommands.isNull())
+			return Poco::Optional<ProtocolInfo>();
+		
         
         ProtocolInfo pi;
-        pi.protocol_name = protocol_name.extract<std::string>();
-        pi.version_major = version_major.extract<int>();
-        pi.version_minor = version_minor.extract<int>();
+		pi.protocol_name = protocol_name.asString();
+		pi.version_major = version_major.asInt();
+		pi.version_minor = version_minor.asInt();
 
-        
-        Poco::JSON::Array::Ptr arr = ocommands.extract<Poco::JSON::Array::Ptr>();
 		
-        for (Poco::JSON::Array::ValueVec::const_iterator i= arr->begin(); i!=arr->end(); i++) {
-            std::string cmd = i->extract<std::string>();
-            pi.commands.push_back(cmd);
-        }
+		if (ocommands.isArray()) {
+			for (int i=0; i<ocommands.size(); i++) {
+				Json::Value v = ocommands[i];
+				
+				try {
+					pi.commands.push_back(v.asString());
+				} catch(Exception e) {
+					std::cerr << e.displayText();
+				}
+			}
+		}
 
         return pi;
     }
@@ -307,22 +327,24 @@ namespace pepperl_fuchs {
         std::vector< std::string > parameter_list;
         if( !sendHttpCommand("list_parameters") || !checkErrorCode() )
             return parameter_list;
-        
-        
-        Poco::JSON::Query query(jsonResult);
-        
-        // Check if JSON contains the key "parameters"
-        Poco::Dynamic::Var oparameters = query.find("parameters");
-        if( !oparameters )
-            return parameter_list;
-        
-        Poco::JSON::Array::Ptr arr = oparameters.extract<Poco::JSON::Array::Ptr>();
-        
-        for (Poco::JSON::Array::ValueVec::const_iterator i= arr->begin(); i!=arr->end(); i++) {
-            std::string param = i->extract<std::string>();
-            parameter_list.push_back(param);
-        }
-        
+		
+		Json::Value oparameters = root["parameters"];
+		
+		if (oparameters.isNull()) {
+			return parameter_list;
+		}
+		
+		if (oparameters.isArray()) {
+			for (int i=0; i<oparameters.size(); i++) {
+				Json::Value v = oparameters[i];
+				try {
+					parameter_list.push_back(v.asString());
+				} catch(Exception e) {
+					std::cerr << e.displayText();
+				}
+			}
+		}
+
         return parameter_list;
     }
 
@@ -339,22 +361,20 @@ namespace pepperl_fuchs {
         // Request handle via HTTP/JSON request/response
         if( !sendHttpCommand("request_handle_tcp", params) || !checkErrorCode() )
             return Poco::Optional<HandleInfo>();
-        
-        Poco::JSON::Query query(jsonResult);
-        
-        // Extract handle info from JSON response
-        Poco::Dynamic::Var port = query.find("port");
-        Poco::Dynamic::Var handle = query.find("handle");
-        
-        if(!port.isInteger() || !handle.isString())
-            return Poco::Optional<HandleInfo>();
-        
+
+		Json::Value port = root["port"];
+		Json::Value handle = root["handle"];
+		
+		if(!port.isInt() || !handle.isString())
+			return Poco::Optional<HandleInfo>();
+
+		
         // Prepare return value
         HandleInfo hi;
         hi.handle_type = HandleInfo::HANDLE_TYPE_TCP;
-        hi.handle = handle.extract<std::string>();
+		hi.handle = handle.asString();
         hi.hostname = http_host_;
-        hi.port = port.extract<int>();
+		hi.port = port.asInt();
         hi.packet_type = 'C';
         hi.start_angle = start_angle;
         hi.watchdog_enabled = true;
@@ -379,18 +399,16 @@ namespace pepperl_fuchs {
         // Request handle via HTTP/JSON request/response
         if( !sendHttpCommand("request_handle_udp", params) || !checkErrorCode() )
             return Poco::Optional<HandleInfo>();
-        
-        Poco::JSON::Query query(jsonResult);
-        
-        // Extract handle info from JSON response
-        Poco::Dynamic::Var handle = query.find("handle");
-        if(!handle.isString())
-            return Poco::Optional<HandleInfo>();
-        
+		
+		Json::Value handle = root["handle"];
+		if(!handle.isString())
+			return Poco::Optional<HandleInfo>();
+		
+		
         // Prepare return value
         HandleInfo hi;
         hi.handle_type = HandleInfo::HANDLE_TYPE_UDP;
-        hi.handle = handle.extract<std::string>();
+		hi.handle = handle.asString();
         hi.hostname = hostname;
         hi.port = port;
         hi.packet_type = 'C';
