@@ -14,7 +14,6 @@
 
 #include <stdio.h>
 
-#include "Poco/Thread.h"
 #include "Poco/Net/SocketAddress.h"
 #include "Poco/Net/DatagramSocket.h"
 

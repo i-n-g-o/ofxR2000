@@ -21,11 +21,7 @@
 
 #include "Poco/Optional.h"
 
-//#include "Poco/JSON/Parser.h"
 #include <json/json.h>
-
-#include "Poco/Dynamic/Var.h"
-
 
 #include "protocol_info.h"
 
@@ -135,14 +131,8 @@ private:
     int http_port_;
     
     //! Returned JSON as property_tree
-//    boost::property_tree::ptree pt_;
-//    Poco::JSON::Parser jsonParser;
-//    Poco::Dynamic::Var jsonResult;
-	
 	Json::Reader jsonParser;
 	Json::Value root;
-	
-	
 	
     //! HTTP-Status code of last request
 	int http_status_code_;

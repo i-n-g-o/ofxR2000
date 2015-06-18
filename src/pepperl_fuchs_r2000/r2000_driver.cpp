@@ -42,6 +42,8 @@
 #include "scan_data_receiver_udp.h"
 #include "scan_data_receiver_tcp.h"
 
+#include "Poco/NumberFormatter.h"
+
 
 namespace pepperl_fuchs
 {
@@ -277,6 +279,7 @@ namespace pepperl_fuchs
 	{
 		if( !command_interface_ )
 			return false;
+		
 		return command_interface_->setParameter("samples_per_scan",Poco::NumberFormatter::format(samples));
 	}
 

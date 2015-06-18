@@ -16,12 +16,6 @@
 
 #include <stdio.h>
 
-#if __cplusplus>=201103
-	#include <thread>
-#else
-	#include "Poco/Thread.h"
-#endif
-
 #include "Poco/Net/SocketAddress.h"
 #include "Poco/Net/StreamSocket.h"
 

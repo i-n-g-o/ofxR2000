@@ -11,11 +11,6 @@
 
 #include "scan_data_receiver_udp.h"
 
-#if __cplusplus<201103
-	#include "Poco/NumberFormatter.h"
-#endif
-
-
 namespace pepperl_fuchs {
 
     ScanDataReceiverUDP::ScanDataReceiverUDP() :
@@ -30,7 +25,6 @@ namespace pepperl_fuchs {
 #if __cplusplus>=201103
 		io_service_thread_ = std::thread(runner, std::ref(*this));
 #else
-		io_service_thread_.setName("UDP Thread " + Poco::NumberFormatter::format(io_service_thread_.id()));
         io_service_thread_.start(*this);
 #endif
 		

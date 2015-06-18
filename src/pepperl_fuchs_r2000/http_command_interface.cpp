@@ -30,6 +30,8 @@
 #include "Poco/Net/DatagramSocket.h"
 #include "Poco/URI.h"
 
+#include "Poco/NumberFormatter.h"
+
 
 namespace pepperl_fuchs {
 	
