@@ -27,6 +27,7 @@
 #if __cplusplus>=201103
 	#include <mutex>
 	#include <thread>
+	#include <atomic>
 	#include "packet_structure_cpp11.h"
 #else
 	#include "Poco/Mutex.h"
