@@ -28,7 +28,7 @@ zipcompress( const std::vector< std::uint32_t > & src, int level )
 		}
 		else
 		{
-			ofLogError( "ofxZip::compress()" ) << "zlib compress() error: " << error;
+			ofLogError( "zipcompress()" ) << "zlib compress() error: " << error;
 			ret.clear();
 		}
 	}
