@@ -7,19 +7,20 @@ int sps_size = sizeof(sps) / sizeof(int);
 void ofApp::setup(){
 
 	
-	ofSetFrameRate(0);
+	ofSetFrameRate(60);
 	ofSetVerticalSync(true);
 	ofEnableAlphaBlending();
 	ofBackground(40);
 	
 	
-	dataReader.load("/Users/inx/Documents/_src/openFrameworks_orig/apps/myApps/r2000DataRecorder/bin/data/25200_10/2015_10_04-13_28_24-r2000-empty-room.bin");
+	bool succ = dataReader.load("/Users/inx/Documents/_src/openFrameworks_orig/apps/myApps/r2000DataRecorder/bin/data/25200_10/2015_10_04-13_28_24-r2000-empty-room.bin");
 	
 	
 	angleStep = 360.0 / (float)dataReader.getSamplesPerScan();
 //	if (isCw) angleStep = -angleStep;
 
-	ofLogNotice() << "samplesPerScan: " << dataReader.getSamplesPerScan() << " scanFrequency: " << dataReader.getScanFrequency();
+	ofLogNotice() << "samplesPerScan: " << dataReader.getSamplesPerScan();
+	ofLogNotice() << "scanFrequency: " << dataReader.getScanFrequency();
 
 	
 	
@@ -49,7 +50,7 @@ void ofApp::update(){
 		if (!pixelBufferDist.isAllocated() ||
 			pixelBufferDist.size() != (lastScanData.distance_data.size() * sizeof(std::uint32_t)))
 		{
-			ofLogNotice() << "allocate textureBuffer: " << lastScanData.distance_data.size();
+//			ofLogNotice() << "allocate textureBuffer: " << lastScanData.distance_data.size();
 			
 			pixelBufferDist.allocate();
 			pixelBufferDist.setData(lastScanData.distance_data, GL_STREAM_DRAW);
@@ -74,7 +75,7 @@ void ofApp::update(){
 		if (!pixelBufferAmp.isAllocated() ||
 			pixelBufferAmp.size() != (lastScanData.distance_data.size() * sizeof(std::uint32_t)))
 		{
-			ofLogNotice() << "resize amp texture";
+//			ofLogNotice() << "resize amp texture";
 			
 			pixelBufferAmp.allocate();
 			pixelBufferAmp.setData(lastScanData.amplitude_data, GL_STREAM_DRAW);
