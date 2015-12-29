@@ -16,9 +16,12 @@ static int sps_size = sizeof(sps) / sizeof(int);
 
 /*
  */
-static void uncompress_uint32( const std::vector< unsigned char > & src, std::vector< std::uint32_t > & ret )
+static void zipuncompress_uint32( const std::vector< unsigned char > & src, std::vector< std::uint32_t > & ret )
 {
-	if ( src.size() < 4 ) return ret;
+	if ( src.size() < 4 ) {
+		ret.clear();
+		return;
+	}
 	
 	/// load header (size of compressed buffer)
 	uLongf originalSize = 0;
@@ -27,12 +30,12 @@ static void uncompress_uint32( const std::vector< unsigned char > & src, std::ve
 		originalSize += ( src[1] << 16 );
 		originalSize += ( src[2] <<  8 );
 		originalSize += ( src[3] <<  0 );
-		
 	}
 	
 	ret.resize( originalSize, 0 );
 	unsigned long ret_size = originalSize * sizeof(std::uint32_t);
 	{
+		// try to uncompress with sizeof( uLongf )
 		int error = uncompress( (unsigned char*)ret.data(), &ret_size, src.data() + sizeof( uLongf ), src.size() );
 		
 		if ( error == Z_OK )
@@ -41,8 +44,27 @@ static void uncompress_uint32( const std::vector< unsigned char > & src, std::ve
 		}
 		else
 		{
-			ofLogError( "ofxZip::uncompress()" ) << "zlib uncompress() error: " << error;
-			ret.clear();
+			// failed... try with other uLongSize...
+			int error = Z_OK;
+			
+			if (sizeof(uLongf) == 4) {
+				// try with uLongF size 8
+				uint8_t sizeOfULongf = 8;
+				error = uncompress( (unsigned char*)ret.data(), &ret_size, src.data() + sizeOfULongf, src.size() );
+				
+			} else if (sizeof(uLongf) == 8) {
+				// try with uLongF size 4
+				uint8_t sizeOfULongf = 4;
+				error = uncompress( (unsigned char*)ret.data(), &ret_size, src.data() + sizeOfULongf, src.size() );
+			}
+			
+			if ( error == Z_OK )
+			{
+				ret.resize( ret_size / sizeof(std::uint32_t), 0 );
+			} else {
+				ofLogError( "zipuncompress_uint32()" ) << "zlib uncompress() error: " << error;
+				ret.clear();
+			}
 		}
 	}
 }
@@ -137,10 +159,6 @@ void R2000DataReader::initRead() {
 	updateTime = 1000.0 / (double)scanFrequency;
 	dataStart = infile.tellg();
 	lastUpdate = ofGetElapsedTimeMillis() - updateTime;
-
-	
-	ofLogNotice() << "samplesPerScan: " << samplesPerScan << " scanFrequency: " << scanFrequency;
-
 }
 
 
@@ -184,7 +202,9 @@ bool R2000DataReader::update() {
 			data.resize(vectorSize);
 			infile.read((char*)data.data(), vectorSize);
 			
-			uncompress_uint32(data, lastScanData.distance_data);
+			ofLogNotice() << "uncompress distance data: " << vectorSize;
+			
+			zipuncompress_uint32(data, lastScanData.distance_data);
 			
 			// correct
 			vectorSize = lastScanData.distance_data.size();
@@ -210,7 +230,9 @@ bool R2000DataReader::update() {
 			data.resize(vectorSize);
 			infile.read((char*)data.data(), vectorSize);
 			
-			uncompress_uint32(data, lastScanData.amplitude_data);
+			ofLogNotice() << "uncompress amplitude data: " << vectorSize;
+			
+			zipuncompress_uint32(data, lastScanData.amplitude_data);
 			// correct
 			vectorSize = lastScanData.amplitude_data.size();
 		} else {
@@ -232,7 +254,6 @@ bool R2000DataReader::update() {
 		infile.read((char*)&vectorSize, readSize);
 		if (doCompress || !doCompress) {
 			if (lastScanData.headers.size() != vectorSize) {
-				ofLogNotice() << "resize header vector";
 				lastScanData.headers.resize(vectorSize);
 			}
 			infile.read((char*)lastScanData.headers.data(), (vectorSize * sizeof(PacketHeader)));
