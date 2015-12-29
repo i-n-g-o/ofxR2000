@@ -38,6 +38,8 @@
 #define OFX_R2000_H
 
 #include "r2000_driver.h"
+#include "ofxR2000DataReader.h"
+#include "ofxR2000DataWriter.h"
 
 //! \class R2000Driver
 //! \brief Driver for the laserscanner R2000 of Pepperl+Fuchs
