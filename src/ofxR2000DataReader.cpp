@@ -202,8 +202,6 @@ bool R2000DataReader::update() {
 			data.resize(vectorSize);
 			infile.read((char*)data.data(), vectorSize);
 			
-			ofLogNotice() << "uncompress distance data: " << vectorSize;
-			
 			zipuncompress_uint32(data, lastScanData.distance_data);
 			
 			// correct
@@ -229,8 +227,6 @@ bool R2000DataReader::update() {
 			std::vector<unsigned char> data;
 			data.resize(vectorSize);
 			infile.read((char*)data.data(), vectorSize);
-			
-			ofLogNotice() << "uncompress amplitude data: " << vectorSize;
 			
 			zipuncompress_uint32(data, lastScanData.amplitude_data);
 			// correct
