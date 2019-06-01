@@ -12,11 +12,14 @@
 #define R2000DataReader_h
 
 #include "ofMain.h"
+#include "ofThread.h"
+
 #include "ofxR2000.h"
 
 using namespace pepperl_fuchs;
 
-class R2000DataReader {
+class R2000DataReader : public ofThread
+{
 	
 public:
 	R2000DataReader();
@@ -27,24 +30,33 @@ public:
 	bool load(const char* filepath);
 	bool load(string& filepath);
 	void load(ofFile& file);
-	
-	bool update();
+	bool isLoaded() { return isOpen; };
 	
 	int getSamplesPerScan() { return samplesPerScan; };
 	int getScanFrequency() { return scanFrequency; };
-	ScanData& getLastScanData() { return lastScanData; };
 	uint64_t getCount() { return count; };
+	
+	ScanData getScan();
+	std::size_t getScansAvailable();
+	std::size_t getFullScansAvailable();
 	
 	
 private:
+	void threadedFunction();
 	void initRead();
+	void getNextScan();
 	
 	ofFile infile;
+	bool isOpen;
+	
 	int dataStart;
 	uint64_t count;
 	
 	int samplesPerScan, scanFrequency;
-	ScanData lastScanData;
+	
+	std::deque<ScanData> scan_data_;
+	
+//	ScanData lastScanData;
 	
 	double updateTime; // [ms]
 	uint64_t lastUpdate;
