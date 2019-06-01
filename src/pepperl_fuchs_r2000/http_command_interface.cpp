@@ -16,35 +16,19 @@
 
 #include "http_command_interface.h"
 
-#include <iostream>
-
-#include "Poco/Net/HTTPResponse.h"
-#include "Poco/Net/RawSocket.h"
-#include "Poco/Net/IPAddress.h"
-#include "Poco/UnbufferedStreamBuf.h"
-
-#include "Poco/Net/HTTPSession.h"
-#include "Poco/Net/HTTPRequest.h"
-#include "Poco/Net/HTTPResponse.h"
-#include "Poco/Net/HTTPClientSession.h"
-#include "Poco/Net/DatagramSocket.h"
-#include "Poco/URI.h"
-
-#include "Poco/NumberFormatter.h"
+#include "ofURLFileLoader.h"
 
 
 namespace pepperl_fuchs {
 	
 	using namespace std;
-	using namespace Poco;
-	using namespace Poco::Net;
 	
-    //-----------------------------------------------------------------------------
+	//-----------------------------------------------------------------------------
 	HttpCommandInterface::HttpCommandInterface(const std::string &http_host, int http_port)
     {
         http_host_ = http_host;
         http_port_ = http_port;
-		http_status_code_ = Poco::Net::HTTPResponse::HTTP_NOT_FOUND;
+		http_status_code_ = 404;
 
     }
     
@@ -54,75 +38,39 @@ namespace pepperl_fuchs {
     {
         header = "";
         content = "";
-        
-        try
-		{
-			HTTPClientSession httpSession(http_host_, http_port_);
-			httpSession.setTimeout(Poco::Timespan(20,0));
-			
-			HTTPResponse res;
-			
-			// send request
-			HTTPRequest req(HTTPRequest::HTTP_GET, request_path, HTTPMessage::HTTP_1_0);
-			httpSession.sendRequest(req);
-			
-			// receive response header
-			istream& response_stream = httpSession.receiveResponse(res);
-			
-			// get status code
-			HTTPResponse::HTTPStatus status_code = res.getStatus();
-
-			
-			string http_version = res.getVersion();
-			if (!response_stream || http_version.substr(0, 5) != "HTTP/")
-			{
-				std::cout << "Invalid response\n";
-				return 0;
-			}
-			
-			// get headers
-			NameValueCollection::ConstIterator i = res.begin();
-			while(i != res.end()) {
-				header += i->first + "=" + i->second + "\n";
-				i++;
-			}
-			
-			
-			if (status_code != HTTPResponse::HTTP_OK) {
-				// dump headers
-				std::cout << "headers: " << header;
-				std::flush(std::cout);
-			}
-			
-			
-			std::string tmp;
-			
-			// read until eof
-			while(!response_stream.eof()) {
-				std::getline(response_stream, tmp);
-				content += tmp;
-			}
-			
-			
-            
-			// Substitute CRs by a space
-			for( std::size_t i=0; i<header.size(); i++ ) {
-                if( header[i] == '\r' )
-                    header[i] = ' ';
-			}
-            
-			for( std::size_t i=0; i<content.size(); i++ ) {
-				if( content[i] == '\r' )
-					content[i] = ' ';
-			}
-
-			return status_code;
-			
+		
+		// send request
+		std::string url = "http://" + http_host_ + ":" + ofToString(http_port_) + "/" + request_path;
+		ofHttpResponse resp = ofLoadURL(url);
+		
+		int status_code = resp.status;
+		
+		if (status_code != 200) {
+			// dump headers
+			std::cout << "error: " << resp.error;
+			std::flush(std::cout);
 		}
-		catch (Poco::Exception & exc){
-			std::cerr << "Exception: " <<  exc.displayText() << std::endl;			
-			return 0;
+		
+		ofBuffer data = resp.data();
+		content = data.getText();
+		
+		std::cout << "content: " << content;
+		std::flush(std::cout);
+		
+		
+		
+		// Substitute CRs by a space
+		for( std::size_t i=0; i<header.size(); i++ ) {
+			if( header[i] == '\r' )
+				header[i] = ' ';
 		}
+		
+		for( std::size_t i=0; i<content.size(); i++ ) {
+			if( content[i] == '\r' )
+				content[i] = ' ';
+		}
+		
+		return status_code;
     }
     
     
@@ -186,22 +134,22 @@ namespace pepperl_fuchs {
     
     
     //-----------------------------------------------------------------------------
-    Poco::Optional< std::string > HttpCommandInterface::getParameter(const std::string name)
+    std::optional< std::string > HttpCommandInterface::getParameter(const std::string name)
     {
         if( !sendHttpCommand("get_parameter","list",name) || ! checkErrorCode()  )
-            return Poco::Optional<std::string>();
+            return std::optional<std::string>();
         
         // query json for value
 		
 		if (!root.isMember(name)) {
-			return Poco::Optional<std::string>();
+			return std::optional<std::string>();
 		}
 		
 		Json::Value value = root.get(name, "");
 		if (!value.isString())
-			return Poco::Optional<std::string>();
+			return std::optional<std::string>();
 		
-        return Poco::Optional<std::string>(value.asString());
+        return std::optional<std::string>(value.asString());
     }
     
     
@@ -284,11 +232,11 @@ namespace pepperl_fuchs {
     
     
     //-----------------------------------------------------------------------------
-    Poco::Optional<ProtocolInfo> HttpCommandInterface::getProtocolInfo()
+    std::optional<ProtocolInfo> HttpCommandInterface::getProtocolInfo()
     {
         // Read protocol info via HTTP/JSON request/response
         if( !sendHttpCommand("get_protocol_info") || !checkErrorCode() )
-            return Poco::Optional<ProtocolInfo>();
+            return std::optional<ProtocolInfo>();
         
         // Read and set protocol info
 		Json::Value protocol_name = root["protocol_name"];
@@ -297,7 +245,7 @@ namespace pepperl_fuchs {
 		Json::Value ocommands = root["commands"];
 
 		if (!protocol_name.isString() || !version_major.isNumeric() || !version_minor.isNumeric() || ocommands.isNull())
-			return Poco::Optional<ProtocolInfo>();
+			return std::optional<ProtocolInfo>();
 		
         
         ProtocolInfo pi;
@@ -353,7 +301,7 @@ namespace pepperl_fuchs {
     
     
     //-----------------------------------------------------------------------------
-    Poco::Optional<HandleInfo> HttpCommandInterface::requestHandleTCP(int start_angle)
+    std::optional<HandleInfo> HttpCommandInterface::requestHandleTCP(int start_angle)
     {
         // Prepare HTTP request
         std::map< std::string, std::string > params;
@@ -362,13 +310,13 @@ namespace pepperl_fuchs {
         
         // Request handle via HTTP/JSON request/response
         if( !sendHttpCommand("request_handle_tcp", params) || !checkErrorCode() )
-            return Poco::Optional<HandleInfo>();
+            return std::optional<HandleInfo>();
 
 		Json::Value port = root["port"];
 		Json::Value handle = root["handle"];
 		
 		if(!port.isInt() || !handle.isString())
-			return Poco::Optional<HandleInfo>();
+			return std::optional<HandleInfo>();
 
 		
         // Prepare return value
@@ -387,7 +335,7 @@ namespace pepperl_fuchs {
     
     
     //-----------------------------------------------------------------------------
-    Poco::Optional<HandleInfo> HttpCommandInterface::requestHandleUDP(int port, std::string hostname, int start_angle)
+    std::optional<HandleInfo> HttpCommandInterface::requestHandleUDP(int port, std::string hostname, int start_angle)
     {
         // Prepare HTTP request
         if( hostname == "" )
@@ -400,11 +348,11 @@ namespace pepperl_fuchs {
         
         // Request handle via HTTP/JSON request/response
         if( !sendHttpCommand("request_handle_udp", params) || !checkErrorCode() )
-            return Poco::Optional<HandleInfo>();
+            return std::optional<HandleInfo>();
 		
 		Json::Value handle = root["handle"];
 		if(!handle.isString())
-			return Poco::Optional<HandleInfo>();
+			return std::optional<HandleInfo>();
 		
 		
         // Prepare return value
