@@ -33,9 +33,9 @@ namespace pepperl_fuchs {
 	
 //-----------------------------------------------------------------------------
 ScanDataReceiver::ScanDataReceiver():
-    ring_buffer_(65536)
-    ,scan_data_()
+    scan_data_()
 {
+	data_buffer_.resize(65536);
     last_data_time_ = std::time(0);
     is_connected_ = false;
 }
@@ -104,11 +104,11 @@ bool ScanDataReceiver::handleNextPacket()
 //-----------------------------------------------------------------------------
 int ScanDataReceiver::findPacketStart()
 {
-    if( ring_buffer_.used()<60 )
+    if( ring_buffer_.size()<60 )
         return -1;
-    for( std::size_t i=0; i<ring_buffer_.used()-4; i++)
+    for( std::size_t i=0; i<ring_buffer_.size()-4; i++)
     {
-        if(   ((unsigned char) ring_buffer_[i])   == 0x5c
+		if(   ((unsigned char) ring_buffer_[i])   == 0x5c
            && ((unsigned char) ring_buffer_[i+1]) == 0xa2
            && ((unsigned char) ring_buffer_[i+2]) == 0x43
            && ((unsigned char) ring_buffer_[i+3]) == 0x00 )
@@ -122,18 +122,23 @@ int ScanDataReceiver::findPacketStart()
 //-----------------------------------------------------------------------------
 bool ScanDataReceiver::retrievePacket(std::size_t start, PacketTypeC* p)
 {
-    if( ring_buffer_.used()<60 )
+    if( ring_buffer_.size()<60 )
         return false;
 
     // Erase preceding bytes
-    if (start > 0)
-        ring_buffer_.drain(start);
-
+	while (start > 0) {
+		ring_buffer_.pop_front();
+		start--;
+	}
+	
     char* pp = (char*) p;
     // Peek from header (leave header in the ringbuffer for now)
-    ring_buffer_.peek(pp, 60);
+    // first 60 bytes
+	for (int i=0; i<60; i++) {
+		pp[i] = ring_buffer_[i];
+	}
 
-    if( ring_buffer_.used() < p->header.packet_size )
+    if( ring_buffer_.size() < p->header.packet_size )
         return false;
 
     // Read header+payload data (removes data from ringbuffer)
@@ -205,13 +210,16 @@ std::size_t ScanDataReceiver::getFullScansAvailable() const
 //-----------------------------------------------------------------------------
 void ScanDataReceiver::writeBufferBack(char *src, std::size_t numbytes)
 {
-    if( ring_buffer_.used()+numbytes > ring_buffer_.size() )
+    if( ring_buffer_.size()+numbytes > ring_buffer_.size() )
         throw std::exception();
 
     // lock mutex
-	Poco::ScopedLock<Poco::Mutex> lock(ring_buffer_.mutex());
+	std::lock_guard<std::mutex> lock(ring_buffer_mutex_);
     // append data to rungbuffer
-    ring_buffer_.write(src, numbytes);
+	
+	for (int i=0; i < numbytes; i++) {
+		ring_buffer_.push_back(src[i]);
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -221,10 +229,13 @@ void ScanDataReceiver::readBufferFront(char *dst, std::size_t numbytes)
         throw std::exception();
     
     // lock mutex
-    Poco::ScopedLock<Poco::Mutex> lock(ring_buffer_.mutex());
+    std::lock_guard<std::mutex> lock(ring_buffer_mutex_);
     
     // read buffer from ringbuffer
-    ring_buffer_.read(dst, numbytes);
+	for (int i=0; i < numbytes; i++) {
+		dst[i] = ring_buffer_.front();
+		ring_buffer_.pop_front();
+	}	
 }
 
 //-----------------------------------------------------------------------------

@@ -12,13 +12,11 @@
 #ifndef SCAN_DATA_RECEIVER_TCP_H
 #define SCAN_DATA_RECEIVER_TCP_H
 
-#include "scan_data_receiver.h"
-
 #include <stdio.h>
 
-#include "Poco/Net/SocketAddress.h"
-#include "Poco/Net/StreamSocket.h"
+#include "ofxTCPManager.h"
 
+#include "scan_data_receiver.h"
 
 namespace pepperl_fuchs
 {
@@ -36,7 +34,7 @@ namespace pepperl_fuchs
 		
 		
 	private:
-		Poco::Net::StreamSocket tcp_socket;
+		ofxTCPManager tcp_socket;
 	};
 }
 #endif /* defined(SCAN_DATA_RECEIVER_TCP_H) */

@@ -38,8 +38,9 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "Poco/Optional.h"
+
 #include "protocol_info.h"
+#include "optional.h"
 
 #if __cplusplus>=201103
 	#include "packet_structure_cpp11.h"
@@ -163,7 +164,7 @@ private:
     double food_timeout_;
 
     //! Handle information about data connection
-    Poco::Optional<HandleInfo> handle_info_;
+    optional<HandleInfo> handle_info_;
 
     //! Cached version of the protocol info
     ProtocolInfo protocol_info_;

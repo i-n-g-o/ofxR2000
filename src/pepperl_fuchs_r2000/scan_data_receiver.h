@@ -20,9 +20,9 @@
 #include <string>
 #include <iostream>
 #include <deque>
+#include <queue>
 
-#include "Poco/Array.h"
-#include "Poco/FIFOBuffer.h"
+#include "ofFileUtils.h"
 
 #if __cplusplus>=201103
 	#include <mutex>
@@ -40,7 +40,7 @@ namespace pepperl_fuchs {
 //! \class ScanDataReceiver
 //! \brief Receives data of the laser range finder via IP socket
 //! Receives the scanner data with asynchronous functions of the Boost::Asio library
-class ScanDataReceiver: protected Poco::Runnable
+class ScanDataReceiver
 {
 public:
     //! Connect synchronously to the given IP and TCP port and start reading asynchronously
@@ -107,7 +107,7 @@ protected:
     
     
     //! data Buffer
-    Poco::Array< char, 65536 > data_buffer_;
+    ofBuffer data_buffer_;
 	
 #if __cplusplus>=201103
 	std::atomic<bool> isRunning;
@@ -118,11 +118,12 @@ protected:
 	
 private:
     //! Internal ringbuffer for temporarily storing reveived data
-    Poco::BasicFIFOBuffer<char> ring_buffer_;
+	std::deque<char> ring_buffer_;
 
     //! Protection against data races between ROS and IO threads
 #if __cplusplus>=201103
 	std::mutex data_mutex_;
+	std::mutex ring_buffer_mutex_;
 #else
     Poco::Mutex data_mutex_;
 #endif

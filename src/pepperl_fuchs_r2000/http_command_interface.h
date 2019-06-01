@@ -23,14 +23,10 @@
 #include <json/json.h>
 
 #include "protocol_info.h"
+#include "optional.h"
 
 
 namespace pepperl_fuchs {
-	
-	template< class T >
-	class optional {
-		
-	};
 	
 //! \class HttpCommandInterface
 //! \brief Allows accessing the HTTP/JSON interface of the Pepperl+Fuchs Laserscanner R2000
@@ -54,7 +50,7 @@ public:
     //! Get sensor parameter
     //! @param name Parameter name
     //! @returns Optional string value with value of given parameter name
-	std::optional<std::string> getParameter(const std::string name);
+	optional<std::string> getParameter(const std::string name);
     
     //! Get multiple sensor parameters
     //! @param names Parameter names
@@ -67,19 +63,19 @@ public:
     
     //! Get protocol info (protocol_name, version, commands)
     //! @returns A struct with the requested data
-    std::optional<ProtocolInfo> getProtocolInfo();
+    optional<ProtocolInfo> getProtocolInfo();
     
     //! Request TCP handle
     //! @param start_angle Set start angle for scans in the range [0,3600000] (1/10000°)
     //! @returns A valid HandleInfo on success, an empty boost::optional<HandleInfo> container otherwise
-    std::optional<HandleInfo> requestHandleTCP(int start_angle=-1800000);
+    optional<HandleInfo> requestHandleTCP(int start_angle=-1800000);
     
     //! Request UDP handle
     //! @param port Set UDP port where scanner data should be sent to
     //! @param hostname Optional: Set hostname/IP where scanner data should be sent to, local IP is determined automatically if not specified
     //! @param start_angle Optional: Set start angle for scans in the range [0,3600000] (1/10000°), defaults to -1800000
     //! @returns A valid HandleInfo on success, an empty boost::optional<HandleInfo> container otherwise
-    std::optional<HandleInfo> requestHandleUDP(int port, std::string hostname = std::string(""), int start_angle=-1800000);
+    optional<HandleInfo> requestHandleUDP(int port, std::string hostname = std::string(""), int start_angle=-1800000);
     
     //! Release handle
     bool releaseHandle( const std::string& handle );

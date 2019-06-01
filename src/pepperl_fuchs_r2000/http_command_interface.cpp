@@ -51,8 +51,7 @@ namespace pepperl_fuchs {
 			std::flush(std::cout);
 		}
 		
-		ofBuffer data = resp.data();
-		content = data.getText();
+		content = resp.data.getText();
 		
 		std::cout << "content: " << content;
 		std::flush(std::cout);
@@ -134,22 +133,22 @@ namespace pepperl_fuchs {
     
     
     //-----------------------------------------------------------------------------
-    std::optional< std::string > HttpCommandInterface::getParameter(const std::string name)
+    optional< std::string > HttpCommandInterface::getParameter(const std::string name)
     {
         if( !sendHttpCommand("get_parameter","list",name) || ! checkErrorCode()  )
-            return std::optional<std::string>();
+            return optional<std::string>();
         
         // query json for value
 		
 		if (!root.isMember(name)) {
-			return std::optional<std::string>();
+			return optional<std::string>();
 		}
 		
 		Json::Value value = root.get(name, "");
 		if (!value.isString())
-			return std::optional<std::string>();
+			return optional<std::string>();
 		
-        return std::optional<std::string>(value.asString());
+        return optional<std::string>(value.asString());
     }
     
     
@@ -232,11 +231,11 @@ namespace pepperl_fuchs {
     
     
     //-----------------------------------------------------------------------------
-    std::optional<ProtocolInfo> HttpCommandInterface::getProtocolInfo()
+    optional<ProtocolInfo> HttpCommandInterface::getProtocolInfo()
     {
         // Read protocol info via HTTP/JSON request/response
         if( !sendHttpCommand("get_protocol_info") || !checkErrorCode() )
-            return std::optional<ProtocolInfo>();
+            return optional<ProtocolInfo>();
         
         // Read and set protocol info
 		Json::Value protocol_name = root["protocol_name"];
@@ -245,7 +244,7 @@ namespace pepperl_fuchs {
 		Json::Value ocommands = root["commands"];
 
 		if (!protocol_name.isString() || !version_major.isNumeric() || !version_minor.isNumeric() || ocommands.isNull())
-			return std::optional<ProtocolInfo>();
+			return optional<ProtocolInfo>();
 		
         
         ProtocolInfo pi;
@@ -301,7 +300,7 @@ namespace pepperl_fuchs {
     
     
     //-----------------------------------------------------------------------------
-    std::optional<HandleInfo> HttpCommandInterface::requestHandleTCP(int start_angle)
+    optional<HandleInfo> HttpCommandInterface::requestHandleTCP(int start_angle)
     {
         // Prepare HTTP request
         std::map< std::string, std::string > params;
@@ -310,13 +309,13 @@ namespace pepperl_fuchs {
         
         // Request handle via HTTP/JSON request/response
         if( !sendHttpCommand("request_handle_tcp", params) || !checkErrorCode() )
-            return std::optional<HandleInfo>();
+            return optional<HandleInfo>();
 
 		Json::Value port = root["port"];
 		Json::Value handle = root["handle"];
 		
 		if(!port.isInt() || !handle.isString())
-			return std::optional<HandleInfo>();
+			return optional<HandleInfo>();
 
 		
         // Prepare return value
@@ -335,7 +334,7 @@ namespace pepperl_fuchs {
     
     
     //-----------------------------------------------------------------------------
-    std::optional<HandleInfo> HttpCommandInterface::requestHandleUDP(int port, std::string hostname, int start_angle)
+    optional<HandleInfo> HttpCommandInterface::requestHandleUDP(int port, std::string hostname, int start_angle)
     {
         // Prepare HTTP request
         if( hostname == "" )
@@ -348,11 +347,11 @@ namespace pepperl_fuchs {
         
         // Request handle via HTTP/JSON request/response
         if( !sendHttpCommand("request_handle_udp", params) || !checkErrorCode() )
-            return std::optional<HandleInfo>();
+            return optional<HandleInfo>();
 		
 		Json::Value handle = root["handle"];
 		if(!handle.isString())
-			return std::optional<HandleInfo>();
+			return optional<HandleInfo>();
 		
 		
         // Prepare return value

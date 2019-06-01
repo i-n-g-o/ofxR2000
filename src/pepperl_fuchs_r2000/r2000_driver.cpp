@@ -42,8 +42,6 @@
 #include "scan_data_receiver_udp.h"
 #include "scan_data_receiver_tcp.h"
 
-#include "Poco/NumberFormatter.h"
-
 
 namespace pepperl_fuchs
 {
@@ -64,7 +62,7 @@ namespace pepperl_fuchs
 		
 		command_interface_ = new HttpCommandInterface(hostname, port);
 		
-		Poco::Optional<ProtocolInfo> opi = command_interface_->getProtocolInfo();
+		optional<ProtocolInfo> opi = command_interface_->getProtocolInfo();
 		
 		if (!opi.isSpecified() ||
 			(opi.value()).version_major != 1)

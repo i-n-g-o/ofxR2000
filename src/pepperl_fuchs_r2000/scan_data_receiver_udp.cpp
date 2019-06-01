@@ -11,19 +11,23 @@
 
 #include "scan_data_receiver_udp.h"
 
+
 namespace pepperl_fuchs {
 
     ScanDataReceiverUDP::ScanDataReceiverUDP() :
         ScanDataReceiver()
-	    ,udp_port_(-1)
-		,udp_socket(Poco::Net::SocketAddress(Poco::Net::IPAddress(Poco::Net::IPAddress::IPv4), 0))
+	    ,udp_port_(12000)
     {
-		udp_port_ = udp_socket.address().port();
-
+//		ofxUDPSettings settings;
+		
+		while (!udp_socket.Bind(udp_port_)) {
+			udp_port_++;
+		}
+		
 		is_connected_ = true;
 		
 #if __cplusplus>=201103
-		io_service_thread_ = std::thread(runner, std::ref(*this));
+		io_service_thread_ = std::thread(runner, *this);
 #else
         io_service_thread_.start(*this);
 #endif
@@ -40,8 +44,7 @@ namespace pepperl_fuchs {
     
     void ScanDataReceiverUDP::run()
     {
-		Poco::Net::SocketAddress sender;
-		char* buffer = data_buffer_.data();
+		char* buffer = data_buffer_.getData();
 		
 #if __cplusplus>=201103
 		isRunning = true;
@@ -60,7 +63,7 @@ namespace pepperl_fuchs {
 #endif
 		{
             // do
-			std::size_t numBytes = udp_socket.receiveFrom(buffer, data_buffer_.size(), sender);
+			std::size_t numBytes = udp_socket.Receive(buffer, data_buffer_.size());
 
             writeBufferBack(buffer, numBytes);
             
@@ -92,6 +95,6 @@ namespace pepperl_fuchs {
         // wait until thread is done
         io_service_thread_.join();
 		
-		udp_socket.close();        
+		udp_socket.Close();
     }
 }

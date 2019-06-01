@@ -14,8 +14,7 @@
 
 #include <stdio.h>
 
-#include "Poco/Net/SocketAddress.h"
-#include "Poco/Net/DatagramSocket.h"
+#include "ofxUDPManager.h"
 
 #include "scan_data_receiver.h"
 
@@ -42,7 +41,7 @@ namespace pepperl_fuchs {
 		int udp_port_;
 		
 		//! Data (UDP) socket
-		Poco::Net::DatagramSocket udp_socket;
+		ofxUDPManager udp_socket;
 	};
 	
 }

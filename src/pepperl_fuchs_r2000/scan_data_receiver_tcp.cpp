@@ -16,9 +16,12 @@
 namespace pepperl_fuchs
 {
 	ScanDataReceiverTCP::ScanDataReceiverTCP(const std::string hostname, const int tcp_port) :
-		ScanDataReceiver(),
-		tcp_socket(Poco::Net::SocketAddress(hostname, tcp_port))
-    {	
+		ScanDataReceiver()
+    {
+		
+		tcp_socket.Create();
+		tcp_socket.Connect(hostname.c_str(), tcp_port);
+		
 		is_connected_ = true;
 		
 		// start thread
@@ -38,7 +41,7 @@ namespace pepperl_fuchs
     
 	void ScanDataReceiverTCP::run()
 	{
-		char* buffer = data_buffer_.data();
+		char* buffer = data_buffer_.getData();
 		
 		// thread worker
 #if __cplusplus>=201103
@@ -56,7 +59,7 @@ namespace pepperl_fuchs
 #endif
 		{
 			// do
-			std::size_t numBytes = tcp_socket.receiveBytes(buffer, data_buffer_.size());
+			std::size_t numBytes = tcp_socket.Receive(buffer, data_buffer_.size());
 			
 			if (numBytes == 0) break; // gracefull shutdown...
 			
@@ -92,6 +95,6 @@ namespace pepperl_fuchs
         // wait until thread is done
         io_service_thread_.join();
 		
-        tcp_socket.close();
+		tcp_socket.Close();
     }
 }
