@@ -17,6 +17,7 @@
 #include "http_command_interface.h"
 
 #include "ofURLFileLoader.h"
+#include "ofxTCPManager.h"
 
 
 namespace pepperl_fuchs {
@@ -425,15 +426,16 @@ namespace pepperl_fuchs {
         std::string local_ip;
         try
         {
-			SocketAddress sa(http_host_, http_port_);
-			DatagramSocket sock;
-			sock.connect(sa);
+			ofxTCPManager m;
+			InetAddr a;
 			
-			// get host address
-			SocketAddress a = sock.address();
-			local_ip = a.host().toString();
+			m.Create();
+			m.Connect(http_host_.c_str(), http_port_);
+			m.GetInetAddr(&a);
 			
-			sock.close();
+			local_ip = a.DottedDecimal();
+			
+			m.Close();
         }
         catch (std::exception& e)
         {
