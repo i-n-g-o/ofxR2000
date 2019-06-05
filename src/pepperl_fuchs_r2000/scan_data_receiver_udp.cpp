@@ -10,6 +10,7 @@
 //
 
 #include "scan_data_receiver_udp.h"
+#include "ofLog.h"
 
 
 namespace pepperl_fuchs {
@@ -18,8 +19,7 @@ namespace pepperl_fuchs {
         ScanDataReceiver()
 	    ,udp_port_(12000)
     {
-//		ofxUDPSettings settings;
-		
+		udp_socket.Create();
 		while (!udp_socket.Bind(udp_port_)) {
 			udp_port_++;
 		}
@@ -27,12 +27,12 @@ namespace pepperl_fuchs {
 		is_connected_ = true;
 		
 #if __cplusplus>=201103
-		io_service_thread_ = std::thread(runner, *this);
+		io_service_thread_ = std::thread(runner, std::ref(*this));
 #else
         io_service_thread_.start(*this);
 #endif
 		
-//        std::cout << "Receiving scanner data at local UDP port " << udp_port_ << " ... ";
+		ofLogNotice() << "Receiving scanner data at local UDP port " << udp_port_ << " ... ";
     }
     
     

@@ -45,6 +45,7 @@ class ScanDataReceiver
 public:
     //! Connect synchronously to the given IP and TCP port and start reading asynchronously
     ScanDataReceiver(const std::string hostname, const int tcp_port);
+	virtual ~ScanDataReceiver() {}
 
     //! Open an UDP port and listen on it
     ScanDataReceiver();

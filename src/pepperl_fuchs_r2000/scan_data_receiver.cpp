@@ -210,9 +210,7 @@ std::size_t ScanDataReceiver::getFullScansAvailable() const
 //-----------------------------------------------------------------------------
 void ScanDataReceiver::writeBufferBack(char *src, std::size_t numbytes)
 {
-    if( ring_buffer_.size()+numbytes > ring_buffer_.size() )
-        throw std::exception();
-
+	
     // lock mutex
 	std::lock_guard<std::mutex> lock(ring_buffer_mutex_);
     // append data to rungbuffer
