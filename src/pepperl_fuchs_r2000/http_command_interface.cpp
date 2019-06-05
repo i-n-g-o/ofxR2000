@@ -195,8 +195,8 @@ namespace pepperl_fuchs {
 					}
 					
 					
-				} catch (Exception e) {
-					std::cerr << "error: " << e.displayText() << std::endl;
+				} catch (exception e) {
+					std::cerr << "error: " << e.what() << std::endl;
 				}
 			} else {
                 key_values[*s] = "--COULD NOT RETRIEVE VALUE--";
@@ -255,8 +255,8 @@ namespace pepperl_fuchs {
 				
 				try {
 					pi.commands.push_back(v.asString());
-				} catch(Exception e) {
-					std::cerr << e.displayText();
+				} catch(exception e) {
+					std::cerr << "error getProtocolinfo: " << e.what() << std::endl;
 				}
 			}
 		}
@@ -284,8 +284,8 @@ namespace pepperl_fuchs {
 				Json::Value v = oparameters[i];
 				try {
 					parameter_list.push_back(v.asString());
-				} catch(Exception e) {
-					std::cerr << e.displayText();
+				} catch(exception e) {
+					std::cerr << "error getparameterlist: " << e.what() << std::endl;
 				}
 			}
 		}
