@@ -12,12 +12,12 @@ namespace pepperl_fuchs {
 	
 	template< class T >
 	class optional {
+	public:
 		optional() : m_hasValue(false) {}
-		optional(T value) : m_hasValue(true), m_value(value) {}
 		optional(const T& value) : m_hasValue(true), m_value(value) {}
 		
-		bool hasValue() const { return hasValue; }
-		bool isSpecified() const { return hasValue; }		
+		bool hasValue() const { return m_hasValue; }
+		bool isSpecified() { return m_hasValue; }
 		T value() { return m_value; }
 		
 	private:

@@ -171,7 +171,7 @@ namespace pepperl_fuchs
 
 		is_capturing_ = false;
 		return_val = return_val && command_interface_->releaseHandle(handle_info_.value().handle);
-		handle_info_ = Poco::Optional<HandleInfo>();
+		handle_info_ = optional<HandleInfo>();
 		return return_val;
 	}
 
@@ -244,7 +244,7 @@ namespace pepperl_fuchs
 		is_capturing_ = false;
 		is_connected_ = false;
 
-		handle_info_ = Poco::Optional<HandleInfo>();
+		handle_info_ = optional<HandleInfo>();
 		protocol_info_ = ProtocolInfo();
 		parameters_ = std::map< std::string, std::string >();
 	}
