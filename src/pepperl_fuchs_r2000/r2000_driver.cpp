@@ -35,9 +35,11 @@
 
 #include <ctime>
 #include <algorithm>
+
+#include "ofUtils.h"
+
 #include "r2000_driver.h"
 #include "http_command_interface.h"
-
 #include "scan_data_receiver.h"
 #include "scan_data_receiver_udp.h"
 #include "scan_data_receiver_tcp.h"
@@ -64,8 +66,7 @@ namespace pepperl_fuchs
 		
 		optional<ProtocolInfo> opi = command_interface_->getProtocolInfo();
 		
-		if (!opi.isSpecified() ||
-			(opi.value()).version_major != 1)
+		if (!opi.isSpecified())
 		{
 			std::cerr << "ERROR: Could not connect to laser range finder!" << std::endl;
 			return false;
@@ -148,7 +149,7 @@ namespace pepperl_fuchs
 			return false;
 		}
 
-		food_timeout_ = std::floor(std::max((handle_info_.value().watchdog_timeout/1000.0/3.0),1.0));
+		food_timeout_ = floor(std::max((handle_info_.value().watchdog_timeout/1000.0/3.0),1.0));
 		is_capturing_ = true;
 		return true;
 	}
