@@ -4,3 +4,8 @@ meta:
 	ADDON_AUTHOR = Ingo Randolf, Denis Dillenberger
 	ADDON_TAGS = "Hardware Interface"
 	ADDON_URL = https://github.com/i-n-g-o/ofxR2000
+
+common:
+			# dependencies with other addons, a list of them separated by spaces
+			# or use += in several lines
+		ADDON_DEPENDENCIES = ofxPoco
