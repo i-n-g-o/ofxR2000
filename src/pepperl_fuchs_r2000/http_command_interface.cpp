@@ -301,7 +301,7 @@ namespace pepperl_fuchs {
         // Prepare HTTP request
         std::map< std::string, std::string > params;
         params["packet_type"] = "C";
-        params["start_angle"] = Poco::NumberFormatter::format(start_angle);
+        params["start_angle"] = ofToString(start_angle);
         
         // Request handle via HTTP/JSON request/response
         if( !sendHttpCommand("request_handle_tcp", params) || !checkErrorCode() )
@@ -337,8 +337,8 @@ namespace pepperl_fuchs {
             hostname = discoverLocalIP();
         std::map< std::string, std::string > params;
         params["packet_type"] = "C";
-        params["start_angle"] = Poco::NumberFormatter::format(start_angle);
-        params["port"] = Poco::NumberFormatter::format(port);
+        params["start_angle"] = ofToString(start_angle);
+        params["port"] = ofToString(port);
         params["address"] = hostname;
         
         // Request handle via HTTP/JSON request/response

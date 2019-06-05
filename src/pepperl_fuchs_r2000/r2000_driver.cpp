@@ -269,7 +269,7 @@ namespace pepperl_fuchs
 	{
 		if( !command_interface_ )
 			return false;
-		return command_interface_->setParameter("scan_frequency",Poco::NumberFormatter::format(frequency));
+		return command_interface_->setParameter("scan_frequency", ofToString(frequency));
 	}
 
 	//-----------------------------------------------------------------------------
@@ -278,7 +278,7 @@ namespace pepperl_fuchs
 		if( !command_interface_ )
 			return false;
 		
-		return command_interface_->setParameter("samples_per_scan",Poco::NumberFormatter::format(samples));
+		return command_interface_->setParameter("samples_per_scan", ofToString(samples));
 	}
 
 	//-----------------------------------------------------------------------------
