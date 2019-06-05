@@ -53,11 +53,6 @@ namespace pepperl_fuchs {
 		
 		content = resp.data.getText();
 		
-		std::cout << "content: " << content;
-		std::flush(std::cout);
-		
-		
-		
 		// Substitute CRs by a space
 		for( std::size_t i=0; i<header.size(); i++ ) {
 			if( header[i] == '\r' )
